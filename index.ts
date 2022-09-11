@@ -5,11 +5,6 @@ interface RGB<T, U, V, W> {
     a?: W;
 }
 
-interface HEX {
-    rgb?: string;
-    rgba?: string;
-}
-
 type color = string | number;
 
 abstract class sevenSun {
@@ -46,7 +41,7 @@ abstract class sevenSun {
             if (typeof value !== 'number' && typeof value !== 'string') {
                 throw new Error(`Incorrect parameter type passed in`);
             } else {
-                value = typeof value === 'number' ? value : parseFloat(value);
+                value = typeof value === 'number' ? value : Number.parseFloat(value);
                 if (alpha) {
                     if (value < 0 || value > 1) {
                         throw new Error(`The alpha value is not in the proper range`);
@@ -54,10 +49,10 @@ abstract class sevenSun {
                         let hex = Math.round(value * 255)
                             .toString(16)
                             .toUpperCase();
-                        return hex.length === 1 ? '0' + hex : hex.length > 2 ? hex.substring(0, 2) : hex;
+                        return hex.length === 1 ? '0' + hex : hex.length > 2 ? hex.slice(0, 2) : hex;
                     }
                 } else {
-                    if (value > 255) {
+                    if (value < 0 || value > 255) {
                         throw new Error(`RGB values out of range`);
                     } else {
                         let hex = value.toString(16).toUpperCase();
@@ -78,7 +73,7 @@ abstract class sevenSun {
                 if (!rgbString) {
                     throw new Error(`Not enough RGB values found at ${v1}`);
                 } else {
-                    const rgbNumber = rgbString[0].split(',').map(value => parseFloat(value));
+                    const rgbNumber = rgbString[0].split(',').map(value => Number.parseFloat(value));
                     return this._calculateArray(rgbNumber);
                 }
             } else if (typeof v1 === 'object' && !Array.isArray(v1)) {
@@ -105,6 +100,45 @@ abstract class sevenSun {
                 }
             } else {
                 throw new Error(`Unknown parameter type`);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+
+        return '';
+    }
+
+    public static toRGB(v1: string): string {
+        try {
+            const value = v1.match(/\w+/g);
+            if (!value) {
+                throw new Error(`Not HEX values found at ${v1}`);
+            } else {
+                const bit = value[0].length;
+                if (bit !== 3 && bit !== 4 && bit !== 6 && bit !== 8) {
+                    throw new Error(`Parameter length error`);
+                } else {
+                    const array = value[0].split('');
+                    let prefix = bit === 3 || bit === 6 ? 'rgb(' : 'rgba(';
+                    for (let i = 0; i < bit; ) {
+                        if (bit <= 4) {
+                            if (i < 3) {
+                                prefix += Number.parseInt(`0x${array[i]}${array[i]}`).toString() + (bit === 3 && i === 2 ? ')' : ',');
+                            } else if (i === 3) {
+                                prefix += (Math.round(Number.parseInt(`0x${array[i]}${array[i]}`) / 2.55) / 100).toString() + ')';
+                            }
+                            i++;
+                        } else {
+                            if (i < 6) {
+                                prefix += Number.parseInt(`0x${array[i]}${array[i + 1]}`).toString() + (bit === 6 && i === 4 ? ')' : ',');
+                            } else if (i === 6) {
+                                prefix += (Math.round(Number.parseInt(`0x${array[i]}${array[i + 1]}`) / 2.55) / 100).toString() + ')';
+                            }
+                            i += 2;
+                        }
+                    }
+                    return prefix;
+                }
             }
         } catch (error) {
             console.error(error);
